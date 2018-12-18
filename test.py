@@ -2,6 +2,8 @@ from math import sqrt
 from collections import deque
 import numpy as np
 import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Dense, Activation
 
 class Env:
 
@@ -67,8 +69,9 @@ class Agent:
         # replay memory
         self.D = deque(maxlen=self.replay_memory_size)
 
-        # model
-        self.init_model()
+        # model initialize
+        self.init_Q_model()
+        self.init_reward_model()
 
         # variables
         self.current_loss = 0.0
@@ -80,8 +83,18 @@ class Agent:
         return (a / np.linalg.norm(a)) * self.SPEED
     
     def init_Q_model(self):
-        pass
-
+        # 行動ネットワークの定義
+        self.q_model = Sequential()
+        self.q_model.add(Dense(24,input_dim=6))
+        self.q_model.add(Activation("relu"))
+        self.q_model.add(Dense(24))
+        self.q_model.add(Activation("relu"))
+        self.q_model.add(Dense(2))
+        self.q_model.compile(
+            loss="mean_squared_error",
+            optimizer="RMSprop",
+        )
+        
     def init_reward_model(self,):
         pass
 
