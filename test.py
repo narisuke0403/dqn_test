@@ -2,12 +2,13 @@ from math import sqrt
 from collections import deque
 import numpy as np
 import tensorflow as tf
+import keras
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 
 class Env:
 
-    MAP = np.array([100, 100])
+    MAP = np.array([10, 10])
 
     def __init__(self, agent=object, *args, **kwargs):
         self.agent = agent
@@ -36,15 +37,14 @@ class Env:
         print("reward:{}".format(self.agent.reward()))
 
     def run(self, try_nb, MAX_STEP=100,):
-        for _ in range(try_nb):
-            sp = 0
-            while self.agent.alive:
-                sp += 1
-                if sp > MAX_STEP:
-                    break
-                self.step()
-                self._monitor()
-            self.reset()
+        sp = 0
+        while self.agent.alive:
+            sp += 1
+            if sp > MAX_STEP:
+                break
+            self.step()
+            self._monitor()
+        self.reset()
                 
             
 class Agent:
@@ -57,7 +57,6 @@ class Agent:
         self.next = self.now
         self.alive = True
         self.SPEED = 3.0
-        self.decide_goal()
 
         # for agent training
         self.minibatch_size = 32
@@ -65,6 +64,7 @@ class Agent:
         self.learning_rate = 0.001
         self.discount_factor = 0.9
         self.exploration = 0.1
+        self.LIMIT_STEP = 100
 
         # replay memory
         self.D = deque(maxlen=self.replay_memory_size)
@@ -92,14 +92,27 @@ class Agent:
         self.q_model.add(Dense(2))
         self.q_model.compile(
             loss="mean_squared_error",
-            optimizer="RMSprop",
+            optimizer="adam",
         )
         
     def init_reward_model(self,):
-        pass
+        self.reward_model = Sequential()
+        self.reward_model.add(Dense(24,input_dim=8, kernel_initializer=keras.initializers.Zeros()))
+        self.reward_model.add(Activation("relu"))
+        self.reward_model.add(Dense(24, kernel_initializer=keras.initializers.Zeros()))
+        self.reward_model.add(Activation("relu"))
+        self.reward_model.add(Dense(1))
+        self.reward_model.compile(
+            loss="mean_squared_error",
+            optimizer="RMProp",
+        )
 
     def Q_values(self, state):
-        return 0
+        y = self.q_model.predict(state)
+        return y
+
+    def reward_values(self, state):
+        y = self.reward_model.predict(state)
 
     def select_action(self, state, epsilon):
         if np.random.rand() <= epsilon:
@@ -109,7 +122,7 @@ class Agent:
             return (a / np.linalg.norm(a)) * self.SPEED
         else:
             a = self.Q_values(state)
-            return a
+            return a * self.SPEED
     
     def store_experience(self, state, action, reward, state_1, terminal):
         self.D.append((state, action, reward, state_1, terminal))
@@ -122,12 +135,20 @@ class Agent:
         minibatch_size = min(len(self.D), self.minibatch_size)
         minibatch_indexes = np.random.randint(0, len(self.D), minibatch_size)
 
+        for j in minibatch_indexes:
+            state_j, action_j, reward_j, state_j_1, terminal = self.D[j]
+
         
     def decide_goal(self):
         self.goal = np.array([80,80])
+        if self._dict(self.now, self.goal) < self.SPEED:
+            return True
+        return False
 
-    def reward(self,):
-        return self._dict(self.goal, self.now)
+    def reward(self, state):
+        if self.decide_goal():
+            pass
+
 
     def _dict(self,x,y):
         d = np.linalg.norm(x-y)
