@@ -3,24 +3,24 @@ import numpy as np
 class Stage:
     def __init__(self):
         self.MAP = np.array([[10.0, 10.0]])
-        self.START = np.array([[2.0, 2.0]])
-        self.player_pos = np.copy(self.START)
-        self.GOAL = np.array([[8.0, 8.0]])
-        self.action = np.array([[0.0, 0.0]])
         self.MAXSTEP = 100.0
         self.reset()
     
     def reset(self):
-        self.player_pos = np.copy(self.START)
         self.reward = 0
         self.terminal = False
-    
+        self.start = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
+        self.player_pos = np.copy(self.start)
+        self.goal = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
+        self.action = np.array([[0.0, 0.0]])
+
     def update(self, action, step):
         self.action = action
         self.player_pos += self.action
         self.reward = 0
         self.terminal = False
-        if self._dict(self.player_pos, self.GOAL) < 1.0:
+        if self._dict(self.player_pos, self.goal) < 1.0:
+            print("GOAL")
             self.reward = 1
             self.terminal = True
         elif step > self.MAXSTEP or self._check_MAP(self.player_pos) == False:
@@ -28,7 +28,7 @@ class Stage:
             self.terminal = True
 
     def observe(self):
-        state = np.hstack((self.player_pos, self.GOAL))
+        state = np.hstack((self.player_pos, self.goal))
         return state, self.reward, self.terminal, self.action
 
     def execute_action(self, action, step):

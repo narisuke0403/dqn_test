@@ -74,7 +74,7 @@ class Agent:
 
             reward_state_j = np.hstack((state_j, action_j))
             reward_state_j_1 = np.hstack((state_j_1, action_j_1))
-            y_j_now = self.reward_model.predict(reward_state_j)
+            #y_j_now = self.reward_model.predict(reward_state_j)
             if terminal:
                 y_j = reward_j
             else:
@@ -109,8 +109,8 @@ class Agent:
         self.reward_model.fit(reward_state_minibatch, reward_y_minibatch, epochs=10)
         if action_state_minibatch != []:
             print("action network fitting")
-            input()
             self.action_model.fit(action_state_minibatch, action_y_minibatch, epochs=10)
+    
     def select_action(self, state, epsilon):
         if np.random.rand() <= epsilon:
             print("geedy")
