@@ -29,7 +29,7 @@ if __name__ == "__main__":
     env.player_pos = np.copy(env.start)
 
     # 地点のランダム生成
-    #env.reset()
+    env.reset()
     
     # モデルの読み込み
     agent.action_model = keras.models.load_model("action_model.h5", compile=False)
@@ -53,6 +53,7 @@ if __name__ == "__main__":
         step += 1
         draw(canvas, env)
         state_t_1, reward_t, terminal, action_t_1 = env.observe()
+    draw(canvas, env)
     root.mainloop()
     print(state)
     

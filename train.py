@@ -8,7 +8,7 @@ if __name__ == "__main__":
     agent = Agent()
 
     # parameters
-    n_epochs = 10000
+    n_epochs = 50000
 
     goal = 0
 
