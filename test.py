@@ -19,6 +19,21 @@ def draw(canvas, env):
     canvas.pack()
     canvas.update()
 
+def draw_all(canvas, agent):
+    canvas.create_rectangle(100, 100, 500, 500)
+    goal = np.array([[5.0, 4.0]])
+    xs = np.arange(1.0, 9.0, 0.5)
+    ys = np.arange(1.0, 9.0, 0.5)
+    canvas.create_oval(goal[0][0] * 40.0 + 100, goal[0][1] * 40.0 + 100, goal[0][0] * 40.0 + 50 + 100, goal[0][1] * 40.0 + 50 + 100, tag="goal")
+    for x in xs:
+        for y in ys:
+            a = np.array([[x, y]])
+            s = np.hstack((a, goal))
+            ac = agent.action_model.predict(s)
+            canvas.create_line(100 + x * 40, 100 + y * 40, 100 + (x + ac[0][0]) * 40, 100 + (y + ac[0][1]) * 40)
+            canvas.pack()
+
+"""
 if __name__ == "__main__":
     env = Stage()
     agent = Agent()
@@ -56,5 +71,18 @@ if __name__ == "__main__":
     draw(canvas, env)
     root.mainloop()
     print(state)
-    
+"""
 
+if __name__ == "__main__":
+    env = Stage()
+    agent = Agent()
+    agent.action_model = keras.models.load_model("action_model.h5", compile=False)
+
+    # GUIの設定
+    root = tkinter.Tk()
+    root.title("")
+    root.geometry("600x600")
+    canvas = tkinter.Canvas(root, width=600, height=600)
+    canvas.place(x=0, y=0)
+    draw_all(canvas, agent)
+    root.mainloop()
