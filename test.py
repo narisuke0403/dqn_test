@@ -28,13 +28,16 @@ def draw(canvas, env, agent, number=0, step=0):
     canvas.create_oval(env.start[0][0] * 40.0 + 100, env.start[0][1] * 40.0 + 100, env.start[0][0] * 40.0 + 50 + 100, env.start[0][1] * 40.0 + 50 + 100, tag="start")
     canvas.create_oval(env.goal[0][0] * 40.0 + 100, env.goal[0][1] * 40.0 + 100,env.goal[0][0] * 40.0 + 50 + 100, env.goal[0][1] * 40.0 + 50 + 100, tag="goal")
     canvas.create_oval(env.player_pos[0][0] * 40.0 + 100, env.player_pos[0][1] * 40.0 + 100, env.player_pos[0][0] * 40.0 + 10 + 100, env.player_pos[0][1] * 40.0 + 10 + 100, tag="player")
-    
+    canvas.create_oval(env.player_pos[0][0] * 40.0 + 100 -10 , env.player_pos[0][1] * 40.0 + 100 - 10, env.player_pos[0][0] * 40.0 + 10 + 100 + 10, env.player_pos[0][1] * 40.0 + 10 + 100 + 10, tag="player")
     # debug score
     state = np.hstack((env.player_pos, env.goal))
-    state_n = agent.normalize(state)
     state_action = np.hstack((state, agent.action(state_n)))
-    state_action_n = agent.normalize(state_action)
     reward_action = agent.reward_model.predict(state_action_n)
+    for x in range(-1,1):
+        for y in range(-1,1):
+            state = np.hstack((env.player_pos+np.array((x, y)), env.goal))
+            state_action = np.hstack((state, agent.action(state_n)))
+            reward_action = agent.reward_model.predict(state_action_n)
     canvas.delete("line")
     canvas.create_text(250, 35, text="pos : {}".format(state_action), tag="line")
     canvas.create_text(250, 50, text="taining : {}".format(number), tag="line")
@@ -43,6 +46,12 @@ def draw(canvas, env, agent, number=0, step=0):
     
     canvas.pack()
     canvas.update()
+
+
+def _from_rgb(rgb):
+    """translates an rgb tuple of int to a tkinter friendly color code
+    """
+    return "#%02x%02x%02x" % rgb
 
 def draw_all(canvas, env,agent, number=0):
     canvas.create_rectangle(100, 100, 500, 500)
@@ -60,10 +69,9 @@ def draw_all(canvas, env,agent, number=0):
             a = np.array([[x, y]])
             if env.check_MAP(a):
                 s = np.hstack((a, goal))
-                s_n = agent.normalize(s)
-                ac = agent.action_model.predict(s_n)
+                ac = agent.action_model.predict(s)
                 d = np.linalg.norm(ac)
-                ac = ac / d if d > 1 else ac
+                ac = ac / d #if d > 1 else ac
                 canvas.create_line(100 + x * 40, 100 + y * 40, 100 + (x + ac[0][0]) * 40, 100 + (y + ac[0][1]) * 40, tag="line")
                 canvas.pack()
     canvas.update()
@@ -92,7 +100,7 @@ def move_check(canvas, env, agent, number):
 
 def vector_check(env):
     agent = Agent()
-    #agent.action_model = keras.models.load_model("action_model.h5", compile=False)
+    agent.action_model = keras.models.load_model("action_model.h5", compile=False)
 
     # GUIの設定
     root = tkinter.Tk()
@@ -102,6 +110,7 @@ def vector_check(env):
     canvas.place(x=0, y=0)
     draw_all(canvas, env, agent)
     root.mainloop()
+
 
 if __name__ == "__main__":
     env = Stage()
@@ -116,10 +125,10 @@ if __name__ == "__main__":
     env.reset()
 
     # モデルの読み込み
-    agent.action_model = keras.models.load_model(
-        "action_model.h5", compile=False)
+    agent.action_model = keras.models.load_model("action_model.h5", compile=False)
+    agent.reward_model = keras.models.load_model("reward_model.h5", compile=False)
 
-    state_t_1, _, terminal, _ = env.observe()
+    state_t_1, _, terminal = env.observe()
     state = []
     step = 0
 
@@ -130,6 +139,7 @@ if __name__ == "__main__":
     canvas = tkinter.Canvas(root, width=600, height=600)
     canvas.place(x=0, y=0)
 
+    """
     while not terminal:
         state_t = state_t_1
         state.append(np.copy(env.player_pos))
@@ -137,7 +147,11 @@ if __name__ == "__main__":
         env.execute_action(action_t, step)
         step += 1
         draw(canvas, env, agent)
-        state_t_1, _, terminal, _ = env.observe()
+        state_t_1, _, terminal = env.observe()
     draw(canvas, env, agent)
+    """
+    while True:
+        time.sleep(1)
+        draw_all(canvas, env, agent)
     root.mainloop()
-    print(state)
+    

@@ -1,59 +1,16 @@
-import numpy as np
 import tkinter
-import threading
 import time
+
+import numpy as np
+from tqdm import tqdm
 
 from stage import Stage, WholeStage
 from agent import Agent
 import test
 
-def simple_training():
-    print("simple training start")
-    env = Stage()
-    agent = Agent()
-
-    # parameters
-    n_epochs = 50000
-
-    # GUIの設定
-    root = tkinter.Tk()
-    root.title("")
-    root.geometry("600x600")
-    canvas = tkinter.Canvas(root, width=600, height=600)
-    canvas.place(x=0, y=0)
-    data_num = 0
-
-    for i in range(n_epochs):
-        data_num += 1
-        step = 0
-        env.reset()
-        state_t_1, reward_t, terminal= env.observe()
-        while not terminal:
-            state_t = state_t_1
-            state_t_n = agent.normalize(state_t)
-            action_t = agent.select_action(state_t_n, agent.exploration)
-            env.execute_action(action_t, step)
-            step += 1
-
-            state_t_1, reward_t, terminal = env.observe()
-
-            agent.store_experience(
-                state_t, action_t, reward_t, state_t_1, terminal)
-            if(i > 4000):
-                agent.experience_replay()
-            if (len(agent.good_action_experience) > 4000):
-                agent.good_action_replay()
-        if i > 4000:
-            test.draw_all(canvas, env, agent, i)
-            #test.move_check(canvas, env, agent, i)
-    agent.reward_model.save("reward_model.h5", include_optimizer=True)
-    agent.action_model.save("action_model.h5", include_optimizer=True)
-    root.mainloop()
-
-def whole_training():
-    print("Whole training start")
-    env = WholeStage()
-    agent = Agent()
+def training(stage, player):
+    env = stage
+    agent = player
 
     # parameters
     n_epochs = 50000
@@ -73,34 +30,26 @@ def whole_training():
         state_t_1, reward_t, terminal = env.observe()
         while not terminal:
             state_t = state_t_1
-            state_t_n = agent.normalize(state_t)
-            action_t = agent.select_action(state_t_n, agent.exploration)
+            action_t = agent.select_action(state_t, agent.exploration)
             env.execute_action(action_t, step)
             step += 1
 
             state_t_1, reward_t, terminal = env.observe()
 
-            agent.store_experience(state_t, action_t, reward_t, state_t_1, terminal)
-            if(i > 4000):
+            agent.store_experience(
+                state_t, action_t, reward_t, state_t_1, terminal)
+            if i > 4000:
                 agent.experience_replay()
-            if (len(agent.good_action_experience) > 4000):
+            if len(agent.good_action_experience) > 32:
                 agent.good_action_replay()
         if i > 4000:
-            test.draw_all(canvas, env,agent, i)
+            test.draw_all(canvas, env, agent, i)
             #test.move_check(canvas, env, agent, i)
     agent.reward_model.save("reward_model_whole.h5", include_optimizer=True)
     agent.action_model.save("action_model_whole.h5", include_optimizer=True)
     root.mainloop()
 
 if __name__ == "__main__":
-    """
-    thread_1 = threading.Thread(target=simple_training)
-    thread_2 = threading.Thread(target=whole_training)
-    thread_1.start()
-    thread_2.start()
-    """
-    
-    #simple_training()
-    whole_training()
+    training(Stage(), Agent())
 
 
