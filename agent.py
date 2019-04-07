@@ -139,7 +139,8 @@ class Agent:
             else:
                 action_y_minibatch = np.vstack((action_y_minibatch, action_j))
         
-        self.action_model.fit(action_state_minibatch,action_y_minibatch, epochs=100)
+        self.action_model.fit(action_state_minibatch,
+                              action_y_minibatch, epochs=100, verbose=0)
 
 
     def select_action(self, state, epsilon):

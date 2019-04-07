@@ -13,18 +13,21 @@ def training(stage, player):
     agent = player
 
     # parameters
-    n_epochs = 50000
+    n_epochs = 10000
 
+    """
     # GUIの設定
     root = tkinter.Tk()
     root.title("")
     root.geometry("600x600")
     canvas = tkinter.Canvas(root, width=600, height=600)
     canvas.place(x=0, y=0)
+    """
     data_num = 0
 
     for i in range(n_epochs):
         data_num += 1
+        print(data_num)
         step = 0
         env.reset()
         state_t_1, reward_t, terminal = env.observe()
@@ -42,12 +45,8 @@ def training(stage, player):
                 agent.experience_replay()
             if len(agent.good_action_experience) > 32:
                 agent.good_action_replay()
-        if i > 4000:
-            test.draw_all(canvas, env, agent, i)
-            #test.move_check(canvas, env, agent, i)
-    agent.reward_model.save("reward_model_whole.h5", include_optimizer=True)
-    agent.action_model.save("action_model_whole.h5", include_optimizer=True)
-    root.mainloop()
+    agent.reward_model.save("reward_model.h5", include_optimizer=True)
+    agent.action_model.save("action_model.h5", include_optimizer=True)
 
 if __name__ == "__main__":
     training(Stage(), Agent())
