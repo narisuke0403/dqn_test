@@ -25,9 +25,8 @@ def training(stage, player):
     """
     data_num = 0
 
-    for i in range(n_epochs):
+    for i in tqdm(range(n_epochs)):
         data_num += 1
-        print(data_num)
         step = 0
         env.reset()
         state_t_1, reward_t, terminal = env.observe()
@@ -41,6 +40,37 @@ def training(stage, player):
 
             agent.store_experience(
                 state_t, action_t, reward_t, state_t_1, terminal)
+        if i > 4000:
+            agent.experience_replay()
+        if len(agent.good_action_experience) > 32:
+            agent.good_action_replay()
+    agent.reward_model.save("reward_model.h5", include_optimizer=True)
+    agent.action_model.save("action_model.h5", include_optimizer=True)
+
+def training_set_goal_position(stage, player):
+    env = stage
+    agent = player
+
+    n_epochs = 10000
+    data_num = 0
+    goal_list = env.goal_position
+    for i in tqdm(range(n_epochs)):
+        for t in goal_list:
+            data_num += 1
+            step = 0
+            env.reset()
+            env.goal = t
+            state_t_1, reward_t, terminal = env.observe()
+            while not terminal:
+                state_t = state_t_1
+                action_t = agent.select_action(state_t, agent.exploration)
+                env.execute_action(action_t, step)
+                step += 1
+
+                state_t_1, reward_t, terminal = env.observe()
+
+                agent.store_experience(
+                    state_t, action_t, reward_t, state_t_1, terminal)
             if i > 4000:
                 agent.experience_replay()
             if len(agent.good_action_experience) > 32:
@@ -48,7 +78,10 @@ def training(stage, player):
     agent.reward_model.save("reward_model.h5", include_optimizer=True)
     agent.action_model.save("action_model.h5", include_optimizer=True)
 
+
+
 if __name__ == "__main__":
-    training(Stage(), Agent())
+    #training(Stage(), Agent())
+    training_set_goal_position(Stage(), Agent())
 
 

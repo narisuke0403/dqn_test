@@ -62,7 +62,8 @@ class Agent:
     
     def reward(self, state):
         return self.reward_model.predict(state)
-    
+
+
     def action(self, state):
         a = self.action_model.predict(state)
         return a
@@ -79,11 +80,11 @@ class Agent:
         reward_y_minibatch = []
         minibatch_size = min(len(self.D), self.minibatch_size)
         minibatch_indexes = np.random.randint(0, len(self.D), minibatch_size)
-        
+         
         for j in minibatch_indexes:
             state_j, action_j, reward_j, state_j_1 ,terminal = self.D[j]
 
-            # make input
+
             reward_state_j = np.hstack((state_j, action_j))
             action_j_1 = self.action(state_j_1)
             reward_state_j_1 = np.hstack((state_j_1, action_j_1))

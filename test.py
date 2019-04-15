@@ -98,10 +98,8 @@ def draw_all_line():
     for x in range(1,10):
         for y in range(1,10):
             point = np.array([[x,y]])
-            print(point)
             state = np.hstack((point, field.goal))
             action = player.select_action(state, 0)
-            print(action)
             draw_line(canvas, point[0], action[0])
     canvas.pack()
     root.mainloop()

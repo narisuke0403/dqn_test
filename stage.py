@@ -6,6 +6,8 @@ class Stage:
         self.iswhole = False
         self.MAXSTEP = 10
         self.reset()
+        self.goal_position = []
+        self.set_goal()
     
     def set_start_goal(self):
         self.goal = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
@@ -16,6 +18,10 @@ class Stage:
             self.start = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
         return self.start, self.goal
 
+    def set_goal(self):
+        for x in range(1, 10):
+            for y in range(1, 10):
+                self.goal_position.append(np.array([[x,y]]))
 
     def reset(self):
         self.reward = 0
