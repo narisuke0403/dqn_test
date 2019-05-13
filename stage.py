@@ -1,13 +1,14 @@
 import numpy as np
 
 class Stage:
+    whole = np.array([[]])
     def __init__(self):
         self.MAP = np.array([[10.0, 10.0]])
-        self.iswhole = False
         self.MAXSTEP = 10
         self.reset()
         self.goal_position = []
         self.set_goal()
+        
     
     def set_start_goal(self):
         self.goal = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
@@ -19,8 +20,8 @@ class Stage:
         return self.start, self.goal
 
     def set_goal(self):
-        for x in range(1, 10):
-            for y in range(1, 10):
+        for x in range(1, 10, 2):
+            for y in range(1, 10, 2):
                 self.goal_position.append(np.array([[x,y]]))
 
     def reset(self):
@@ -62,12 +63,12 @@ class Stage:
         return False
 
 class WholeStage(Stage):
+    whole = np.array([[4.5, 4.5,6.5, 6.5]])
     def __init__(self, *args, **kwargs):
-        
+        super().__init__()
+
         # make whole x1,y1,x2,y2, length_x=x2-x1, length_y=y2-y1
-        self.whole = np.array([[2.0, 2.0, 4.0, 4.0]])
-        
-        super(WholeStage, self).__init__()
+        print(self.whole)
         self.iswhole = True
         
     
