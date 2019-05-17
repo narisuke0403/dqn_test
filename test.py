@@ -39,8 +39,10 @@ def draw_simple(field, goal):
 
     # initialize field
     field.reset()
-    field.goal = goal
-    field.player_pos = np.array([[0.5, 0.5]])
+
+    # define player's position and goal position
+    #field.goal = goal
+    #field.player_pos = np.array([[0.5, 0.5]])
     step = 0
     
     # initialize TKinter
@@ -85,17 +87,27 @@ def draw_all_line(canvas, field, player):
                 draw_line(canvas, point[0], action[0])
 
 def all_line(goal, field, player):
+
+    def click(event):
+        canvas.delete("object")
+        goal = np.array([[event.x / 40.0, event.y / 40.0]])
+        draw_oval(canvas, goal[0], "black")
+        field.goal = goal
+        draw_all_line(canvas, field, player)
+        canvas.pack()
+        canvas.update()
+
     # initialize field
     field.reset()
-    field.goal = goal
+    #field.goal = goal
 
     # initialize TKinter
     root = tkinter.Tk()
     root.geometry("400x400")
     canvas = tkinter.Canvas(root, width=400, height=400)
+    canvas.bind("<Button-1>",click)
     draw_stage(canvas, field)
-    draw_oval(canvas, field.goal[0], "black")
-
+    
 
     # load model file
     try:
@@ -103,10 +115,14 @@ def all_line(goal, field, player):
         player.reward_model = keras.models.load_model("reward_model.h5")
     except:
         print("cannot find file")
-    
+        
+    draw_oval(canvas, field.goal[0], "black")
     draw_all_line(canvas, field, player)
     canvas.pack()
     root.mainloop()    
+
+    
+    
 
 if __name__ == "__main__":
     field = stage.WholeStage()

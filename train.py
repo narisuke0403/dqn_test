@@ -129,7 +129,7 @@ def after_simulation_training(stage, player):
     test.draw_stage(canvas, stage)
     
 
-    n_epochs = 60000
+    n_epochs = 10000
     data_num = 0
     goal_list = stage.goal_position
     for _ in tqdm(range(n_epochs)):
@@ -234,7 +234,7 @@ def wrapper(args):
     return simulation(*args)
 
 if __name__ == "__main__":
-    stage = Stage()
+    stage = WholeStage()
     player = Agent()
     #training(Stage(), player())
     #training_set_goal_position(Stage(), player())

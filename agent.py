@@ -69,7 +69,7 @@ class Agent:
         return self.action_model.predict(state)
 
     def store_experience(self, state, action, reward, state_1, terminal):
-        self.D.append((state, action, reward, state_1, terminal, False))
+        self.D.append((state, action, reward, state_1, terminal))
 
     
     def _cos_sim(self, v1, v2):
@@ -89,7 +89,7 @@ class Agent:
             action_j_1 = self.action(state_j_1)
             reward_state_j_1 = np.hstack((state_j_1, action_j_1))
 
-            y_j_now = self.reward_model.predict(reward_state_j_1)
+            y_j_next = self.reward_model.predict(reward_state_j_1)
             
             # predict reward
             if terminal:
@@ -98,12 +98,12 @@ class Agent:
                     self.good_action_experience.append(copy.deepcopy(self.D[j]))
             else:
                 # reward_j + gamma * max_action' Q(state', action')
-                y_j_now = np.clip(y_j_now, -1.0, 1.0)                
-                y_j = reward_j + self.discount_factor * y_j_now  # NOQA
+                y_j_next = np.clip(y_j_next, -1.0, 1.0)                
+                y_j = reward_j + self.discount_factor * y_j_next  # NOQA
                 y_j = np.clip(y_j, -1.0, 1.0)
 
                 # check good action
-                if y_j > 0 and y_j_now > y_j:
+                if y_j > 0 and y_j_next > y_j:
                     if not exist:
                         self.good_action_experience.append(copy.deepcopy(self.D[j]))
                         self.D[j] = (state_j, action_j, reward_j, state_j_1 ,terminal, True)
@@ -162,15 +162,14 @@ class Agent:
         minibatch_indexes = np.random.randint(0, len(self.D), len(self.D))
          
         for j in minibatch_indexes:
-            state_j, action_j, reward_j, state_j_1 ,terminal, exist = self.D[j]
-
+            state_j, action_j, reward_j, state_j_1 ,terminal = self.D[j]
 
             reward_state_j = np.hstack((state_j, action_j))
-            action_j_1 = self.action(state_j_1)
+            action_j_1 = self.normalize(self.action(state_j_1))
             reward_state_j_1 = np.hstack((state_j_1, action_j_1))
             reward_state_j_1 = self.make_input(reward_state_j_1)
 
-            y_j_now = self.reward_model.predict(reward_state_j_1)
+            y_j_next = self.reward_model.predict(reward_state_j_1)
             
             # predict reward
             if terminal:
@@ -179,15 +178,13 @@ class Agent:
                     self.good_action_experience.append(copy.deepcopy(self.D[j]))
             else:
                 # reward_j + gamma * max_action' Q(state', action')
-                y_j_now = np.clip(y_j_now, -1.0, 1.0)                
-                y_j = reward_j + self.discount_factor * y_j_now  # NOQA
+                y_j_next = np.clip(y_j_next, -1.0, 1.0)                
+                y_j = reward_j + self.discount_factor * y_j_next  # NOQA
                 y_j = np.clip(y_j, -1.0, 1.0)
 
                 # check good action
-                if y_j > 0 and y_j_now > y_j:
-                    if not exist:
-                        self.good_action_experience.append(copy.deepcopy(self.D[j]))
-                        self.D[j] = (state_j, action_j, reward_j, state_j_1 ,terminal, True)
+                if y_j > 0 and y_j_next > y_j:
+                    self.good_action_experience.append(copy.deepcopy(self.D[j]))
 
             # make memory
             # reward memory
@@ -211,7 +208,7 @@ class Agent:
             minibatch_indexes = np.random.randint(0, len(self.good_action_experience), minibatch_size)
             
             for j in minibatch_indexes:
-                state_j, action_j, _, _, _, _ = self.good_action_experience[j]
+                state_j, action_j, _, _, _, = self.good_action_experience[j]
                 if action_state_minibatch == []:
                     #state_j = keras.utils.normalize(state_j)
                     action_state_minibatch = state_j
