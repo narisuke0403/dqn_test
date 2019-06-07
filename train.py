@@ -11,6 +11,7 @@ from stage import Stage, WholeStage
 from agent import Agent
 import test
 
+
 def training(stage, player):
     # parameters
     n_epochs = 10000
@@ -47,6 +48,7 @@ def training(stage, player):
     player.reward_model.save("reward_model.h5", include_optimizer=True)
     player.action_model.save("action_model.h5", include_optimizer=True)
 
+
 def training_set_goal_position(stage, player):
     n_epochs = 10000
     data_num = 0
@@ -75,6 +77,7 @@ def training_set_goal_position(stage, player):
     player.reward_model.save("reward_model.h5", include_optimizer=True)
     player.action_model.save("action_model.h5", include_optimizer=True)
 
+
 def circle_training(stage, player):
     # GUIの設定
     root = tkinter.Tk()
@@ -84,7 +87,6 @@ def circle_training(stage, player):
     canvas.place(x=0, y=0)
 
     test.draw_stage(canvas, stage.MAP[0])
-    
 
     n_epochs = 60000
     data_num = 0
@@ -104,10 +106,11 @@ def circle_training(stage, player):
 
                 state_t_1, reward_t, terminal = stage.observe()
 
-                player.store_experience(state_t, action_t, reward_t, state_t_1, terminal)
+                player.store_experience(
+                    state_t, action_t, reward_t, state_t_1, terminal)
         player.experience_replay_2()
         player.good_action_replay_2()
-        
+
         stage.reset()
         canvas.delete("object")
         test.draw_oval(canvas, stage.goal[0], "black")
@@ -118,7 +121,8 @@ def circle_training(stage, player):
     player.reward_model.save("reward_model.h5", include_optimizer=True)
     player.action_model.save("action_model.h5", include_optimizer=True)
 
-def after_simulation_training(stage, player): 
+
+def after_simulation_training(stage, player):
     # GUIの設定
     root = tkinter.Tk()
     root.title("")
@@ -127,34 +131,21 @@ def after_simulation_training(stage, player):
     canvas.place(x=0, y=0)
 
     test.draw_stage(canvas, stage)
-    
 
-    n_epochs = 10000
+    n_epochs = 100000
     data_num = 0
-    goal_list = stage.goal_position
     for _ in tqdm(range(n_epochs)):
-        for t in goal_list:
+        for _ in range(10):
             data_num += 1
             step = 0
             stage.reset()
-            stage.goal = t
+
             state_t_1, reward_t, terminal = stage.observe()
 
-            # simulate before traingin for decideing exploration
-            while not terminal:
-                state_t = state_t_1
-                action_t = player.select_action(state_t, 0)
-                stage.execute_action(action_t, step)
-                step += 1
-
-                state_t_1, reward_t, terminal = stage.observe()
-            if reward_t < 0 or step > 8:
-                player.exploration = 0.40
-            
             # trainging
             step = 0
             stage.reset()
-            stage.goal = t
+
             state_t_1, reward_t, terminal = stage.observe()
             while not terminal:
                 state_t = state_t_1
@@ -164,22 +155,18 @@ def after_simulation_training(stage, player):
                 simulate_stage = copy.deepcopy(stage)
                 simulate_stage.execute_action(simulate_action, step)
                 _, simulte_reward, _ = simulate_stage.observe()
-                if simulte_reward < 0:
-                    player.exploration = 1.0
-                else : player.exploration = 0.25
-
-
                 action_t = player.select_action(state_t, player.exploration)
                 stage.execute_action(action_t, step)
                 step += 1
 
                 state_t_1, reward_t, terminal = stage.observe()
 
-                player.store_experience(state_t, action_t, reward_t, state_t_1, terminal)
+                player.store_experience(
+                    state_t, action_t, reward_t, state_t_1, terminal)
         player.experience_replay_2()
         player.good_action_replay_2()
-        
-        stage.reset()
+
+        # stage.reset()
         canvas.delete("object")
         test.draw_oval(canvas, stage.goal[0], "black")
         test.draw_all_line(canvas, stage, player)
@@ -189,49 +176,6 @@ def after_simulation_training(stage, player):
     player.reward_model.save("reward_model.h5", include_optimizer=True)
     player.action_model.save("action_model.h5", include_optimizer=True)
 
-def mutilple_training(stage, player): 
-    # GUIの設定
-    root = tkinter.Tk()
-    root.title("")
-    root.geometry("400x400")
-    canvas = tkinter.Canvas(root, width=400, height=400)
-    canvas.place(x=0, y=0)
-    #test.draw_stage(canvas, stage)
-    
-    n_epochs = 10000
-    for _ in tqdm(range(n_epochs)):
-        p = Pool(multiprocessing.cpu_count())
-        p.map(wrapper, [(stage, player)])
-        p.close()
-        player.experience_replay_2()
-        player.good_action_replay_2()
-        
-        stage.reset()
-        canvas.delete("object")
-        test.draw_oval(canvas, stage.goal[0], "black")
-        test.draw_all_line(canvas, stage, player)
-        canvas.pack()
-        canvas.update()
-    root.mainloop()
-    player.reward_model.save("reward_model.h5", include_optimizer=True)
-    player.action_model.save("action_model.h5", include_optimizer=True)
-
-def simulation(stage, player):
-    # trainging
-    step = 0
-    stage.reset()
-    state_t_1, reward_t, terminal = stage.observe()
-    while not terminal:
-        state_t = state_t_1
-        action_t = player.select_action(state_t, player.exploration)
-        stage.execute_action(action_t, step)
-        step += 1
-        state_t_1, reward_t, terminal = stage.observe()
-
-        player.store_experience(state_t, action_t, reward_t, state_t_1, terminal)
-
-def wrapper(args):
-    return simulation(*args)
 
 if __name__ == "__main__":
     stage = WholeStage()
@@ -241,5 +185,3 @@ if __name__ == "__main__":
     #circle_training(Stage(), player())
     after_simulation_training(stage, player)
     #mutilple_training(stage, player)
-
-

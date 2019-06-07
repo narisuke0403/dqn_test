@@ -5,31 +5,35 @@ import time
 import numpy as np
 import keras
 
-import stage 
+import stage
 from agent import Agent
 
 margin = 0
 scale = 40
 
+
 def draw_line(canvas, point, direction):
     canvas.create_line(point[0] * scale + margin, point[1] * scale + margin, point[0] *
                        scale + margin + direction[0] * scale, point[1] * scale + margin + direction[1] * scale, tag="object")
+
 
 def draw_oval(canvas, point, color):
     canvas.create_oval(point[0] * scale + margin - scale/2, point[1] * scale + margin -
                        scale/2, point[0] * scale + margin + scale/2, point[1] * scale + margin +
                        scale/2, tag="object", fill=color)
 
+
 def draw_stage(canvas, field):
     for i in field.whole:
         if field.whole.size != 0:
-            canvas.create_rectangle(i[0] * scale, i[1] * scale, i[2] * scale, i[3] * scale)
-            
+            canvas.create_rectangle(
+                i[0] * scale, i[1] * scale, i[2] * scale, i[3] * scale)
+
 
 # agent will go to goal
 def draw_simple(field, goal):
     player = Agent()
-    
+
     # load model file
     try:
         player.action_model = keras.models.load_model("action_model.h5")
@@ -44,12 +48,12 @@ def draw_simple(field, goal):
     #field.goal = goal
     #field.player_pos = np.array([[0.5, 0.5]])
     step = 0
-    
+
     # initialize TKinter
     root = tkinter.Tk()
     root.geometry("400x600")
     canvas = tkinter.Canvas(root, width=400, height=600)
-    draw_stage(canvas, field) 
+    draw_stage(canvas, field)
     draw_oval(canvas, field.start[0], "red")
     draw_oval(canvas, field.goal[0], "black")
 
@@ -68,23 +72,28 @@ def draw_simple(field, goal):
         draw_oval(canvas, field.player_pos[0], "red")
 
         # draw detail
-        canvas.create_text(200, 450, text="step = {}".format(step), tag="object")
-        canvas.create_text(200, 500, text="action = {}".format(action[0]), tag="object")
-        canvas.create_text(200, 550, text="reward = {}".format(reward[0]), tag="object")
+        canvas.create_text(
+            200, 450, text="step = {}".format(step), tag="object")
+        canvas.create_text(
+            200, 500, text="action = {}".format(action[0]), tag="object")
+        canvas.create_text(
+            200, 550, text="reward = {}".format(reward[0]), tag="object")
 
         canvas.pack()
         canvas.update()
-    
+
     root.mainloop()
 
+
 def draw_all_line(canvas, field, player):
-    for x in range(1,10):
-        for y in range(1,10):
-            point = np.array([[x,y]])
+    for x in range(1, 10):
+        for y in range(1, 10):
+            point = np.array([[x, y]])
             if field.check_MAP(point):
                 state = np.hstack((point, field.goal))
                 action = player.select_action(state, 0)
                 draw_line(canvas, point[0], action[0])
+
 
 def all_line(goal, field, player):
 
@@ -105,9 +114,8 @@ def all_line(goal, field, player):
     root = tkinter.Tk()
     root.geometry("400x400")
     canvas = tkinter.Canvas(root, width=400, height=400)
-    canvas.bind("<Button-1>",click)
+    canvas.bind("<Button-1>", click)
     draw_stage(canvas, field)
-    
 
     # load model file
     try:
@@ -115,15 +123,14 @@ def all_line(goal, field, player):
         player.reward_model = keras.models.load_model("reward_model.h5")
     except:
         print("cannot find file")
-        
+
     draw_oval(canvas, field.goal[0], "black")
     draw_all_line(canvas, field, player)
     canvas.pack()
-    root.mainloop()    
+    root.mainloop()
 
-    
-    
 
+"""
 if __name__ == "__main__":
     field = stage.WholeStage()
     player = Agent()
@@ -131,3 +138,13 @@ if __name__ == "__main__":
 
     draw_simple(field, goal)
     all_line(goal, field, player)
+"""
+
+if __name__ == "__main__":
+    field = stage.WholeStage()
+    player = Agent()
+    player.reward_model = keras.models.load_model("reward_model.h5")
+    state = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1, np.random.rand()
+                       * 8.0 + 1, np.random.rand() * 8.0 + 1, np.random.uniform(-1, 1), np.random.uniform(-1, 1)]])
+    print(state)
+    print(player.reward(state))
