@@ -125,7 +125,7 @@ class Agent:
                 print(y_j_now)
                 print(reward_j)
                 print(y_j_next)
-
+                
                 y_j = y_j_now[0] + self.alpha * (reward_j + self.discount_factor * y_j_next[0] - y_j_now[0])  # NOQA
                 y_j = np.clip(y_j, -1.0, 1.0)
 

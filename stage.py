@@ -47,15 +47,14 @@ class Stage:
         self.action = action
         self.before_player_pos = np.copy(self.player_pos)
         self.player_pos += self.action
-        self.reward = (0, 0)
+        self.reward = 0
         self.terminal = False
         if self._distance(self.goal[0][0], self.goal[0][1], self.before_player_pos[0][0], self.before_player_pos[0][1], self.player_pos[0][0], self.player_pos[0][1]) <= 1.0:
             # print("GOAL")
-            self.reward = (1, 1)
+            self.reward = 1
             self.terminal = True
         elif step > self.MAXSTEP or self.check_MAP(self.player_pos) == False or self._judge_inside(self.whole, self.before_player_pos):
-            a = np.abs(self.action)
-            self.reward = (-1 * a[0][0] * sum(a[0]), -1 * a[0][1] * sum(a[0]))
+            self.reward = -1
             self.terminal = True
 
     def observe(self):
@@ -117,7 +116,6 @@ class WholeStage(Stage):
         super().__init__()
 
         # make whole x1,y1,x2,y2, length_x=x2-x1, length_y=y2-y1
-        print(self.whole)
         self.iswhole = True
 
     def check_MAP(self, pos):
