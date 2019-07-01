@@ -140,11 +140,18 @@ if __name__ == "__main__":
     all_line(goal, field, player)
 """
 
+
 if __name__ == "__main__":
-    field = stage.WholeStage()
-    player = Agent()
-    player.reward_model = keras.models.load_model("reward_model.h5")
-    state = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1, np.random.rand()
-                       * 8.0 + 1, np.random.rand() * 8.0 + 1, np.random.uniform(-1, 1), np.random.uniform(-1, 1)]])
-    print(state)
-    print(player.reward(state))
+    status = input()
+    if status == "test":
+        field = stage.WholeStage()
+        player = Agent()
+        player.reward_model = keras.models.load_model("reward_model.h5")
+        state = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1, np.random.rand()
+                        * 8.0 + 1, np.random.rand() * 8.0 + 1, np.random.uniform(-1, 1), np.random.uniform(-1, 1)]])
+        print(state)
+        print(player.reward(state))
+    else:
+        player = Agent()
+        player.reward_model = keras.models.load_model("reward_model.h5")
+        print(player.reward_model.get_weights())
