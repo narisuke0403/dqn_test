@@ -23,30 +23,35 @@ def training(stage, player, n_epochs=1000):
 
     #test.draw_stage(canvas, stage)
 
-    data_num = 0
+    a = 100
+    b = player.replay_memory_size
+    c = 100
     first = True
     for _ in tqdm(range(n_epochs)):
-        for _ in range(100):
-            data_num += 1
+        for _ in range(int(c)):
             step = 0
             stage.reset()
 
             state_t_1, reward_t, terminal = stage.observe()
-
             # trainging
-            step = 0
-            stage.reset()
+            try:
+                while not terminal:
+                    state_t = state_t_1
+                    action_t = player.select_action(
+                        state_t, player.exploration)
+                    stage.execute_action(action_t, step)
+                    step += 1
+                    state_t_1, reward_t, terminal = stage.observe()
 
-            state_t_1, reward_t, terminal = stage.observe()
-            while not terminal:
-                state_t = state_t_1
-                action_t = player.select_action(state_t, player.exploration)
-                stage.execute_action(action_t, step)
-                step += 1
-                state_t_1, reward_t, terminal = stage.observe()
+                    player.store_experience(
+                        state_t, action_t, reward_t, state_t_1, terminal)
+            except KeyboardInterrupt:
+                player.reward_model.save(
+                    "reward_model.h5", include_optimizer=True)
+                player.action_model.save(
+                    "action_model.h5", include_optimizer=True)
+        c = -(100 / 2) * np.log(len(player.D) / b) + 10  # NOQA
 
-                player.store_experience(
-                    state_t, action_t, reward_t, state_t_1, terminal)
         player.experience_replay(first)
         player.good_action_replay()
         first = False

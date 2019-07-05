@@ -140,9 +140,8 @@ class Agent:
         reward_state_minibatch = self.make_trainig_data(reward_state_minibatch)
         self.before_reward_model = cPickle.loads(
             cPickle.dumps(self.reward_model, -1))
-        a = self.reward_model.get_weights()
         self.reward_model.fit(reward_state_minibatch,
-                              reward_y_minibatch, epochs=200, verbose=0)
+                              reward_y_minibatch, epochs=200, verbose=0, batch_size=256)
         self.D.clear()
 
     def good_action_replay(self):
@@ -181,7 +180,9 @@ class Agent:
     def make_trainig_data(self, A):
         mean = A.mean(axis=0)
         std = A.std(axis=0)
+
         A = (A - mean) / std
+
         return A
 
     def _make_random_data(self):
