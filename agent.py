@@ -10,6 +10,8 @@ from keras.layers import Dense, Dropout
 from keras import backend as K
 from tensorflow import math as T
 
+from tensorflow.python.client import device_lib
+
 
 class Agent:
     def __init__(self):
@@ -27,7 +29,7 @@ class Agent:
 
         # reward_model
         self.init_reward_model()
-        #self.before_reward_model = copy.deepcopy(self.reward_model)
+        # self.before_reward_model = copy.deepcopy(self.reward_model)
         self.before_reward_model = cPickle.loads(
             cPickle.dumps(self.reward_model, -1))
 
@@ -36,14 +38,18 @@ class Agent:
 
     def init_action_model(self):
         self.action_model = Sequential()
-        self.action_model.add(Dense(64, input_shape=(8,), activation="relu"))
-        self.action_model.add(Dropout(0.3))
-        self.action_model.add(Dense(128, activation="relu"))
-        self.action_model.add(Dropout(0.3))
-        self.action_model.add(Dense(64, activation="relu"))
-        self.action_model.add(Dropout(0.3))
-        self.action_model.add(Dense(32, activation="relu"))
-        self.action_model.add(Dropout(0.3))
+        self.action_model.add(Dense(100, input_shape=(
+            8,), kernel_initializer=keras.initializers.he_normal(), activation="relu"))
+        self.action_model.add(Dropout(0.5))
+        self.action_model.add(
+            Dense(200, kernel_initializer=keras.initializers.he_normal(), activation="relu"))
+        self.action_model.add(Dropout(0.5))
+        self.action_model.add(
+            Dense(200, kernel_initializer=keras.initializers.he_normal(), activation="relu"))
+        self.action_model.add(Dropout(0.5))
+        self.action_model.add(
+            Dense(100, kernel_initializer=keras.initializers.he_normal(), activation="relu"))
+        self.action_model.add(Dropout(0.5))
         self.action_model.add(Dense(2))
         self.action_model.compile(
             loss="cosine_proximity",
@@ -52,17 +58,17 @@ class Agent:
 
     def init_reward_model(self):
         self.reward_model = Sequential()
-        self.reward_model.add(Dense(64, input_shape=(
+        self.reward_model.add(Dense(100, input_shape=(
             12,), kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
         self.reward_model.add(Dropout(0.3))
         self.reward_model.add(
-            Dense(128, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
+            Dense(200, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
         self.reward_model.add(Dropout(0.3))
         self.reward_model.add(
-            Dense(64, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
+            Dense(200, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
         self.reward_model.add(Dropout(0.3))
         self.reward_model.add(
-            Dense(32, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
+            Dense(100, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
         self.reward_model.add(Dropout(0.3))
         self.reward_model.add(
             Dense(1, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros'))
@@ -72,12 +78,14 @@ class Agent:
         )
 
     def reward(self, state):
-        state = self.make_input(state)
-        return self.reward_model.predict(state)
+        with tf.device("/device:CPU:0"):
+            state = self.make_input(state)
+            return self.reward_model.predict(state)
 
     def action(self, state):
-        state = self.make_input(state)
-        return self.action_model.predict(state)
+        with tf.device("/device:CPU:0"):
+            state = self.make_input(state)
+            return self.action_model.predict(state)
 
     def store_experience(self, state, action, reward, state_1, terminal):
         self.D.append((state, action, reward, state_1, terminal))
@@ -92,11 +100,11 @@ class Agent:
             a = self.action(state)
             return a / np.linalg.norm(a)
 
-    def experience_replay(self, first):
+    def experience_replay(self):
         reward_state_minibatch = []
         reward_y_minibatch = []
         minibatcu_size = min(512, len(self.D))
-        minibatch_indexes = np.random.randint(0, len(self.D), minibatcu_size)
+        minibatch_indexes = np.random.randint(0, len(self.D), len(self.D))
         for j in minibatch_indexes:
             # get data
             state_j, action_j, reward_j, state_j_1, terminal = self.D[j]
@@ -113,16 +121,14 @@ class Agent:
             if terminal:
                 y_j = reward_j
                 if y_j > 0:
-                    self.good_action_experience.append(
-                        cPickle.loads(cPickle.dumps(self.D[j], -1)))
+                    self.good_action_experience.append(self.D[j])
             else:
                 y_j = (1 - self.alpha) * y_j_now[0] + self.alpha * (reward_j + self.discount_factor * y_j_next[0] - y_j_now[0])  # NOQA
                 y_j = np.clip(y_j, -1.0, 1.0)[0]
 
                 # check good action
                 if (y_j > 0) and (y_j > y_j_now):
-                    self.good_action_experience.append(
-                        cPickle.loads(cPickle.dumps(self.D[j], -1)))
+                    self.good_action_experience.append(self.D[j])
 
             # make reward memory batch
             if reward_state_minibatch == []:
@@ -138,10 +144,10 @@ class Agent:
 
         reward_state_minibatch = self.make_input(reward_state_minibatch)
         reward_state_minibatch = self.make_trainig_data(reward_state_minibatch)
-        self.before_reward_model = cPickle.loads(
-            cPickle.dumps(self.reward_model, -1))
+        self.before_reward_model.set_weights(self.reward_model.get_weights())
         self.reward_model.fit(reward_state_minibatch,
                               reward_y_minibatch, epochs=200, verbose=0, batch_size=256)
+        # print(self.reward_model.get_weights())
         self.D.clear()
 
     def good_action_replay(self):
@@ -149,7 +155,7 @@ class Agent:
             action_state_minibatch = []
             action_y_minibatch = []
             minibatch_size = min(
-                len(self.good_action_experience), 32)
+                len(self.good_action_experience), 64)
             minibatch_indexes = np.random.randint(
                 0, len(self.good_action_experience), minibatch_size)
 
@@ -170,7 +176,7 @@ class Agent:
             action_state_minibatch = self.make_trainig_data(
                 action_state_minibatch)
             self.action_model.fit(action_state_minibatch,
-                                  action_y_minibatch, epochs=200, verbose=0)
+                                  action_y_minibatch, epochs=200, verbose=1, batch_size=64)
             self.good_action_experience.clear()
 
     def make_input(self, A):
@@ -199,7 +205,11 @@ class Agent:
 
 if __name__ == "__main__":
     agent = Agent()
-    input_data = np.array([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]])
-    print(input_data)
-    action = agent.action_model.predict(input_data)
-    print(action)
+    print(id(agent.reward_model))
+    print(id(agent.before_reward_model))
+    print("############################")
+
+    agent.before_reward_model = cPickle.loads(
+        cPickle.dumps(agent.reward_model, -1))
+    print(id(agent.reward_model))
+    print(id(agent.before_reward_model))

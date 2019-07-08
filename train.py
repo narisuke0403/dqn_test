@@ -1,8 +1,7 @@
 import tkinter
 import time
 import copy
-from multiprocessing import Pool
-import multiprocessing
+import threading
 
 import numpy as np
 from tqdm import tqdm
@@ -21,14 +20,14 @@ def training(stage, player, n_epochs=1000):
     canvas = tkinter.Canvas(root, width=400, height=400)
     canvas.place(x=0, y=0)
 
-    #test.draw_stage(canvas, stage)
+    test.draw_stage(canvas, stage)
 
     a = 100
     b = player.replay_memory_size
     c = 100
     first = True
     for _ in tqdm(range(n_epochs)):
-        for _ in range(int(c)):
+        def one_step():
             step = 0
             stage.reset()
 
@@ -43,6 +42,9 @@ def training(stage, player, n_epochs=1000):
                     step += 1
                     state_t_1, reward_t, terminal = stage.observe()
 
+                    if terminal and reward_t == 1:
+                        goal_count += 1
+
                     player.store_experience(
                         state_t, action_t, reward_t, state_t_1, terminal)
             except KeyboardInterrupt:
@@ -50,21 +52,57 @@ def training(stage, player, n_epochs=1000):
                     "reward_model.h5", include_optimizer=True)
                 player.action_model.save(
                     "action_model.h5", include_optimizer=True)
-        c = -(100 / 2) * np.log(len(player.D) / b) + 10  # NOQA
+            #c = -(100 / 2) * np.log(len(player.D) / b) + 10  # NOQA
+        goal_count = 0
+        for _ in range(int(c)):
+            step = 0
+            stage.reset()
 
-        player.experience_replay(first)
+            state_t_1, reward_t, terminal = stage.observe()
+            for x in stage.start_position:
+                stage.player_pos = x
+                # trainging
+                try:
+                    while not terminal:
+                        state_t = state_t_1
+                        action_t = player.select_action(
+                            state_t, player.exploration)
+                        stage.execute_action(action_t, step)
+                        step += 1
+                        state_t_1, reward_t, terminal = stage.observe()
+
+                        if terminal and reward_t == 1:
+                            goal_count += 1
+
+                        player.store_experience(
+                            state_t, action_t, reward_t, state_t_1, terminal)
+                except KeyboardInterrupt:
+                    player.reward_model.save(
+                        "reward_model.h5", include_optimizer=True)
+                    player.action_model.save(
+                        "action_model.h5", include_optimizer=True)
+            #c = -(100 / 2) * np.log(len(player.D) / b) + 10  # NOQA
+            """
+            thread_1 = threading.Thread(target=one_step)
+            thread_2 = threading.Thread(target=one_step)
+
+            thread_1.start()
+            thread_2.start()
+            """
+        player.experience_replay()
         player.good_action_replay()
-        first = False
 
         # stage.reset()
-        """
+
         canvas.delete("object")
-        test.draw_oval(canvas, stage.goal[0], "black")
+        test.draw_oval(canvas, np.array([5, 5]), "black")
         test.draw_all_line(canvas, stage, player)
         canvas.pack()
         canvas.update()
+
+        print(goal_count)
     root.mainloop()
-    """
+
     player.reward_model.save("reward_model.h5", include_optimizer=True)
     player.action_model.save("action_model.h5", include_optimizer=True)
 
@@ -128,4 +166,4 @@ if __name__ == "__main__":
     profiling_test(stage, player)
     """
 
-    training(stage, player)
+    training(stage, player, 10000)

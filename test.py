@@ -130,28 +130,10 @@ def all_line(goal, field, player):
     root.mainloop()
 
 
-"""
 if __name__ == "__main__":
-    field = stage.WholeStage()
+    field = stage.Stage()
     player = Agent()
     goal = np.array([[5, 5]])
 
     draw_simple(field, goal)
     all_line(goal, field, player)
-"""
-
-
-if __name__ == "__main__":
-    status = input()
-    if status == "test":
-        field = stage.WholeStage()
-        player = Agent()
-        player.reward_model = keras.models.load_model("reward_model.h5")
-        state = np.array([[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1, np.random.rand()
-                        * 8.0 + 1, np.random.rand() * 8.0 + 1, np.random.uniform(-1, 1), np.random.uniform(-1, 1)]])
-        print(state)
-        print(player.reward(state))
-    else:
-        player = Agent()
-        player.reward_model = keras.models.load_model("reward_model.h5")
-        print(player.reward_model.get_weights())
