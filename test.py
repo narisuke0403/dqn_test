@@ -130,6 +130,17 @@ def all_line(goal, field, player):
     root.mainloop()
 
 
+def simple(canvas, field, player):
+    # time.sleep(0.005)
+
+    draw_stage(canvas, field)
+    draw_all_line(canvas, field, player)
+    draw_oval(canvas, field.player_pos[0], "black")
+    draw_oval(canvas, field.goal[0], "red")
+    canvas.pack()
+    canvas.update()
+
+
 if __name__ == "__main__":
     field = stage.Stage()
     player = Agent()

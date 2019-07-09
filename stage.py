@@ -6,7 +6,7 @@ class Stage:
 
     def __init__(self):
         self.MAP = np.array([[10.0, 10.0]])
-        self.MAXSTEP = 20
+        self.MAXSTEP = 10
         self.reset()
         self.goal_position = []
         self.start_position = []
@@ -14,26 +14,33 @@ class Stage:
         self.set_start()
 
     def set_start_goal(self):
-        self.goal = np.array(
-            [[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
-        self.start = np.array(
-            [[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
+        self.goal = np.array([np.random.uniform(1.0, 9.0, 2)])
+
+        ep = np.random.rand()
+        theta = 0.3
+
+        if ep > theta:
+            self.start = self.goal + np.array([np.random.uniform(-2.0, 2.0, 2)])  # NOQA
+        else:
+            self.start = np.array([np.random.uniform(1.0, 9.0, 2)])
+
         while self.check_MAP(self.goal) == False:
-            self.goal = np.array(
-                [[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
+            self.goal = np.array([np.random.uniform(1.0, 9.0, 2)])
         while self.check_MAP(self.start) == False:
-            self.start = np.array(
-                [[np.random.rand() * 8.0 + 1, np.random.rand() * 8.0 + 1]])
+            if ep > theta:
+                self.start = self.goal + np.array([np.random.uniform(-2.0, 2.0, 2)])  # NOQA
+            else:
+                self.start = np.array([np.random.uniform(1.0, 9.0, 2)])
         return self.start, self.goal
 
     def set_goal(self):
-        for x in range(1, 10, 8):
-            for y in range(1, 10, 8):
+        for x in range(1, 10):
+            for y in range(1, 10):
                 self.goal_position.append(np.array([[x, y]]))
 
     def set_start(self):
-        for x in np.arange(1.0, 10.0, 8.0):
-            for y in np.arange(1.0, 10.0, 8.0):
+        for x in range(1, 10):
+            for y in range(1, 10):
                 self.start_position.append(np.array([[x, y]]))
 
     def reset(self):

@@ -39,16 +39,16 @@ class Agent:
     def init_action_model(self):
         self.action_model = Sequential()
         self.action_model.add(Dense(100, input_shape=(
-            8,), kernel_initializer=keras.initializers.he_normal(), activation="relu"))
+            8,), activation="relu"))
         self.action_model.add(Dropout(0.5))
         self.action_model.add(
-            Dense(200, kernel_initializer=keras.initializers.he_normal(), activation="relu"))
+            Dense(20, activation="relu"))
         self.action_model.add(Dropout(0.5))
         self.action_model.add(
-            Dense(200, kernel_initializer=keras.initializers.he_normal(), activation="relu"))
+            Dense(200, activation="relu"))
         self.action_model.add(Dropout(0.5))
         self.action_model.add(
-            Dense(100, kernel_initializer=keras.initializers.he_normal(), activation="relu"))
+            Dense(100, activation="relu"))
         self.action_model.add(Dropout(0.5))
         self.action_model.add(Dense(2))
         self.action_model.compile(
@@ -87,7 +87,7 @@ class Agent:
             state = self.make_input(state)
             return self.action_model.predict(state)
 
-    def store_experience(self, state, action, reward, state_1, terminal):
+    def store_experience(self, state, action, reward, state_1, terminal, first):
         self.D.append((state, action, reward, state_1, terminal))
 
     def select_action(self, state, epsilon):
@@ -100,10 +100,9 @@ class Agent:
             a = self.action(state)
             return a / np.linalg.norm(a)
 
-    def experience_replay(self):
+    def experience_replay(self, first):
         reward_state_minibatch = []
         reward_y_minibatch = []
-        minibatcu_size = min(512, len(self.D))
         minibatch_indexes = np.random.randint(0, len(self.D), len(self.D))
         for j in minibatch_indexes:
             # get data
@@ -111,24 +110,35 @@ class Agent:
 
             # get predict data
             reward_state_j = np.hstack((state_j, action_j))
-            action_j_1 = self.select_action(state_j_1, -1)
-            reward_state_j_1 = np.hstack((state_j_1, action_j_1))
-            y_j_now = self.reward(reward_state_j)
+            action_1 = self.select_action(state_j_1, -1)
+            reward_state_j_1 = np.hstack((state_j_1, action_1))
+
+            if first:
+                y_j_now = reward_j
+            else:
+                y_j_now = self.reward(reward_state_j)
+                y_j_now = np.clip(y_j_now, -1, 1)
+
             reward_state_j_1 = self.make_input(reward_state_j_1)
             y_j_next = self.before_reward_model.predict(reward_state_j_1)
+            y_j_next = np.clip(y_j_next, -1, 1)
 
-            # store reward
+            # calculate reward
             if terminal:
                 y_j = reward_j
                 if y_j > 0:
-                    self.good_action_experience.append(self.D[j])
+                    self.good_action_experience.append(
+                        self.D[j])
             else:
-                y_j = (1 - self.alpha) * y_j_now[0] + self.alpha * (reward_j + self.discount_factor * y_j_next[0] - y_j_now[0])  # NOQA
-                y_j = np.clip(y_j, -1.0, 1.0)[0]
+                if first:
+                    y_j = y_j_now
+                else:
+                    y_j = (1 - self.alpha) * y_j_now[0] + self.alpha * (reward_j + self.discount_factor * y_j_next[0] - y_j_now[0])  # NOQA
+                    y_j = np.clip(y_j, -1.0, 1.0)
 
-                # check good action
                 if (y_j > 0) and (y_j > y_j_now):
-                    self.good_action_experience.append(self.D[j])
+                    self.good_action_experience.append(
+                        self.D[j])
 
             # make reward memory batch
             if reward_state_minibatch == []:
@@ -176,8 +186,8 @@ class Agent:
             action_state_minibatch = self.make_trainig_data(
                 action_state_minibatch)
             self.action_model.fit(action_state_minibatch,
-                                  action_y_minibatch, epochs=200, verbose=1, batch_size=64)
-            self.good_action_experience.clear()
+                                  action_y_minibatch, epochs=200, verbose=0, batch_size=64)
+            # self.good_action_experience.clear()
 
     def make_input(self, A):
         factorial_a = A ** 2
@@ -194,7 +204,7 @@ class Agent:
     def _make_random_data(self):
         random_data = []
         random_data_y = []
-        for _ in range(1):
+        for _ in range(100):
             random_data.append(np.random.uniform(0.5, 9.5, 4))
             random_data_y.append(np.random.uniform(-1, 1, 2))
         random_data = self.make_input(np.array(random_data))
@@ -205,11 +215,4 @@ class Agent:
 
 if __name__ == "__main__":
     agent = Agent()
-    print(id(agent.reward_model))
-    print(id(agent.before_reward_model))
-    print("############################")
-
-    agent.before_reward_model = cPickle.loads(
-        cPickle.dumps(agent.reward_model, -1))
-    print(id(agent.reward_model))
-    print(id(agent.before_reward_model))
+    agent._make_random_data()
