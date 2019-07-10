@@ -36,6 +36,8 @@ class Agent:
         # variables
         self.current_loss = 0.0
 
+        self.load_model()
+
     def init_action_model(self):
         self.action_model = Sequential()
         self.action_model.add(Dense(100, input_shape=(
@@ -76,6 +78,10 @@ class Agent:
             loss="mse",
             optimizer="adam",
         )
+
+    def load_model(self):
+        self.reward_model = keras.models.load_model("reward_model.h5")
+        self.action_model = keras.models.load_model("action_model.h5")
 
     def reward(self, state):
         with tf.device("/device:CPU:0"):
