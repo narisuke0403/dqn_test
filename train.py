@@ -199,5 +199,5 @@ if __name__ == "__main__":
     profiling_test(stage, player)
     """
 
-    #training_visualize(stage, player)
-    training(stage, player, 10000)
+    training_visualize(stage, player)
+    #training(stage, player, 10000)
