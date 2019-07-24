@@ -21,20 +21,21 @@ def training(stage, player, n_epochs=1000):
     canvas.place(x=0, y=0)
 
     test.draw_stage(canvas, stage)
-
+    goal_count_list = []
     a = 100
     b = player.replay_memory_size
     c = 100
     first = True
+    b_goal_count = 0
     for _ in tqdm(range(n_epochs)):
         step = 0
         state_t_1, reward_t, terminal = stage.observe()
+        goal_count = 0
         # trainging
         for _ in range(int(c)):
             step = 0
 
             state_t_1, reward_t, terminal = stage.observe()
-            goal_count = 0
             # trainging
             try:
                 while not terminal:
@@ -57,8 +58,11 @@ def training(stage, player, n_epochs=1000):
                     "action_model.h5", include_optimizer=True)
             stage.reset()
             #c = -(100 / 2) * np.log(len(player.D) / b) + 10  # NOQA
+        print("goal_count:{}".format(goal_count))
         player.experience_replay(first)
         player.good_action_replay()
+        b_goal_count = goal_count
+        goal_count_list.append(goal_count)
         first = False
 
         # stage.reset()
@@ -69,6 +73,9 @@ def training(stage, player, n_epochs=1000):
         canvas.pack()
         canvas.update()
     root.mainloop()
+    import matplotlib.pyplot as plt
+    x = range(len(goal_count_list))
+    plt.plot(x, goal_count_list)
 
     player.reward_model.save("reward_model.h5", include_optimizer=True)
     player.action_model.save("action_model.h5", include_optimizer=True)
@@ -178,6 +185,7 @@ def training_visualize(stage, player, n_epochs=1000):
                     "reward_model.h5", include_optimizer=True)
                 player.action_model.save(
                     "action_model.h5", include_optimizer=True)
+            # player.experience_replay(first)
             stage.reset()
             #c = -(100 / 2) * np.log(len(player.D) / b) + 10  # NOQA
         player.experience_replay(first)

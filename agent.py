@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, Dropout
+from keras.layers import Dense, Dropout, BatchNormalization
 from keras import backend as K
 from tensorflow import math as T
 
@@ -17,7 +17,7 @@ class Agent:
     def __init__(self):
         self.replay_memory_size = 1000
         self.discount_factor = 0.9
-        self.alpha = 0.2
+        self.alpha = 0.5
         self.exploration = 0.25
 
         # replay memoly
@@ -36,21 +36,25 @@ class Agent:
         # variables
         self.current_loss = 0.0
 
-        self.load_model()
+        # self.load_model()
 
     def init_action_model(self):
         self.action_model = Sequential()
         self.action_model.add(Dense(100, input_shape=(
-            8,), activation="relu"))
-        self.action_model.add(Dropout(0.5))
+            10,), activation="relu"))
+        self.action_model.add(BatchNormalization())
+        self.action_model.add(Dropout(0.2))
         self.action_model.add(
-            Dense(20, activation="relu"))
+            Dense(200, activation="relu"))
+        self.action_model.add(BatchNormalization())
         self.action_model.add(Dropout(0.5))
         self.action_model.add(
             Dense(200, activation="relu"))
+        self.action_model.add(BatchNormalization())
         self.action_model.add(Dropout(0.5))
         self.action_model.add(
             Dense(100, activation="relu"))
+        self.action_model.add(BatchNormalization())
         self.action_model.add(Dropout(0.5))
         self.action_model.add(Dense(2))
         self.action_model.compile(
@@ -61,17 +65,25 @@ class Agent:
     def init_reward_model(self):
         self.reward_model = Sequential()
         self.reward_model.add(Dense(100, input_shape=(
-            12,), kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
-        self.reward_model.add(Dropout(0.3))
+            14,), kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
+        self.reward_model.add(BatchNormalization())
+        self.reward_model.add(Dropout(0.2))
         self.reward_model.add(
             Dense(200, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
-        self.reward_model.add(Dropout(0.3))
+        self.reward_model.add(BatchNormalization())
+        self.reward_model.add(Dropout(0.5))
+        self.reward_model.add(
+            Dense(300, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
+        self.reward_model.add(BatchNormalization())
+        self.reward_model.add(Dropout(0.5))
         self.reward_model.add(
             Dense(200, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
-        self.reward_model.add(Dropout(0.3))
+        self.reward_model.add(BatchNormalization())
+        self.reward_model.add(Dropout(0.5))
         self.reward_model.add(
             Dense(100, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros', activation="relu"))
-        self.reward_model.add(Dropout(0.3))
+        self.reward_model.add(BatchNormalization())
+        self.reward_model.add(Dropout(0.5))
         self.reward_model.add(
             Dense(1, kernel_initializer=keras.initializers.he_normal(), bias_initializer='zeros'))
         self.reward_model.compile(
@@ -171,7 +183,7 @@ class Agent:
             action_state_minibatch = []
             action_y_minibatch = []
             minibatch_size = min(
-                len(self.good_action_experience), 64)
+                len(self.good_action_experience), len(self.good_action_experience))
             minibatch_indexes = np.random.randint(
                 0, len(self.good_action_experience), minibatch_size)
 
@@ -192,12 +204,14 @@ class Agent:
             action_state_minibatch = self.make_trainig_data(
                 action_state_minibatch)
             self.action_model.fit(action_state_minibatch,
-                                  action_y_minibatch, epochs=200, verbose=0, batch_size=64)
+                                  action_y_minibatch, epochs=200, verbose=0, batch_size=256)
             # self.good_action_experience.clear()
 
     def make_input(self, A):
         factorial_a = A ** 2
-        return np.hstack((A, factorial_a))
+        vec_s_g = A[:, 0:2] - A[:, 2:4]
+        n = np.hstack((A, factorial_a))
+        return np.hstack((n, vec_s_g))
 
     def make_trainig_data(self, A):
         mean = A.mean(axis=0)
